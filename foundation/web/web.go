@@ -20,7 +20,7 @@ const KeyValues ctxKey = 1
 
 // Values represent state for each request.
 type Values struct {
-	TraceId    string
+	TraceID    string
 	Now        time.Time
 	StatusCode int
 }
@@ -65,7 +65,7 @@ func (a *App) Handle(method string, path string, handler Handler, mw ...Middlewa
 
 		// Set the context  with the required values to process the request
 		v := Values{
-			TraceId: uuid.New().String(),
+			TraceID: uuid.New().String(),
 			Now:     time.Now(),
 		}
 
