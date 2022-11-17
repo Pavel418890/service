@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	//	genkey()
+	genkey()
 	gentoken()
 }
 

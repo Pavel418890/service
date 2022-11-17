@@ -1,0 +1,29 @@
+FROM golang:1.19.3-alpine as build-sales-api
+ENV CGO_ENABLED 0
+ARG VCS_REF
+
+RUN  mkdir -p /service
+
+WORKDIR /service
+
+COPY . .
+
+WORKDIR /service/app/sales-api
+RUN go build -ldflags "-X main.build=${VCS_REF}"
+
+
+FROM alpine:3.12
+ARG BUILD_DATE
+ARG VCS_REF
+COPY --from=build-sales-api /service/private.pem /service/private.pem
+COPY --from=build-sales-api /service/app/sales-api/sales-api /service/sales-api
+WORKDIR /service
+CMD ["./sales-api"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="sales-api" \
+      org.opencontainers.image.authors="Pavel Lots <plots418890@gmail.com>" \
+      org.opencontainers.image.source="https://github.com/pavel418890/service/sales-api" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="Pavel Lots"
+
