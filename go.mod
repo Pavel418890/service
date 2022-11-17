@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/ardanlabs/conf v1.5.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
