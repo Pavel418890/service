@@ -1,5 +1,7 @@
 SHELL := /bin/bash
 
+#==============================================================================
+# Building containers
 sales-api:
 	docker build \
 		-f zarf/docker/dockerfile.sales-api \
@@ -7,6 +9,35 @@ sales-api:
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 		.
+
+#==============================================================================
+# Running from within k8s/dev
+kind-up:
+	kind create cluster \
+		--image kindest/node:v1.25.3 \
+		--name plots-starter-cluster \
+		--config zarf/k8s/dev/kind-config.yaml
+
+	kubectl config set-context --current --namespace=sales-system
+
+kind-down:
+	kind delete cluster --name plots-starter-cluster
+
+kind-load:
+	kind load docker-image sales-api-amd64:1.0 --name plots-starter-cluster
+
+kind-services:
+	./kustomize build zarf/k8s/dev | kubectl apply -f -
+
+
+kind-status:
+	kubectl get nodes
+	kubectl get pods --watch
+
+
+kind-status-full:
+	kubectl describe pod -lapp=sales-api
+#==============================================================================
 run:
 	go run app/sales-api/main.go
 

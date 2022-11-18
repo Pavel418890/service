@@ -1,3 +1,5 @@
+
+
 FROM golang:1.19.3-alpine as build-sales-api
 ENV CGO_ENABLED 0
 ARG VCS_REF
