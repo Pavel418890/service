@@ -18,8 +18,6 @@ kind-up:
 		--name plots-starter-cluster \
 		--config zarf/k8s/dev/kind-config.yaml
 
-	kubectl config set-context --current --namespace=sales-system
-
 kind-down:
 	kind delete cluster --name plots-starter-cluster
 

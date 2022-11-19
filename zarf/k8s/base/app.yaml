@@ -22,37 +22,37 @@ spec:
       - name: app
         image: sales-api-amd64:1.0
         env:
-        - name: SALES_DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: app-config
-              key: db_host
-        - name: SALES_ZIPKIN_REPORTER_URI
-          valueFrom:
-            configMapKeyRef:
-              name: app-config
-              key: zipkin_reporter_url
-        - name: KUBERNETES_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: KUBERNETES_PODNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: KUBERNETES_NAMESPACE_POD_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        - name: KUBERNETES_NODENAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
+          - name: SALES_DB_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: db_host
+          - name: SALES_ZIPKIN_REPORTER_URI
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: zipkin_reporter_uri
+          - name: KUBERNETES_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_PODNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: KUBERNETES_NAMESPACE_POD_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: KUBERNETES_NODENAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
         ports:
-        - name: app
-          containerPort: 3000
-        - name: app-debug
-          containerPort: 4000
+          - name: app
+            containerPort: 3000
+          - name: app-debug
+            containerPort: 4000
         readinessProbe:
           httpGet:
             path: /readiness
@@ -73,14 +73,16 @@ metadata:
 spec:
   selector:
     service: sales-api
-ports:
-- name: zipkin
-  port: 9411
-  targetPort: zipkin
-- name: app
-  port: 3000
-  targetPort: app
-- name: app-debug
-  port: 4000
-  targetPort: app-debug
+  ports:
+  - name: zipkin
+    port: 9411
+    targetPort: zipkin
+  - name: app
+    port: 3000
+    targetPort: app
+  - name: app-debug
+    port: 4000
+    targetPort: app-debug
+
+
 

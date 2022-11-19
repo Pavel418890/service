@@ -53,7 +53,7 @@ func run(log *log.Logger) error {
 		}
 		Auth struct {
 			KeyID          string `conf:"default:920ee610-06ee-4f4e-a105-8fb95be31155"`
-			PrivateKeyFile string `conf:"default:/home/plots/go/src/github.com/service/private.pem"`
+			PrivateKeyFile string `conf:"default:/service/private.pem"`
 			Algorithm      string `conf:"default:RS256"`
 		}
 	}
