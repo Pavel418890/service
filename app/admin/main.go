@@ -12,11 +12,39 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/pavel418890/service/business/data/schema"
+	"github.com/pavel418890/service/foundation/database"
 )
 
 func main() {
-	genkey()
-	gentoken()
+	//	genkey()
+	//	gentoken()
+	migrate()
+}
+
+func migrate() {
+	cfgDB := database.Config{
+		User:       "postgres",
+		Password:   "postgres",
+		Host:       "0.0.0.0",
+		Name:       "postgres",
+		DisableTLS: true,
+	}
+	db, err := database.Open(cfgDB)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer db.Close()
+
+	if err := schema.Migrate(db); err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println("migration complete")
+
+	if err := schema.Seed(db); err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println("seed data complete")
 }
 
 func gentoken() {

@@ -17,6 +17,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pavel418890/service/app/sales-api/handlers"
 	"github.com/pavel418890/service/business/auth"
+	"github.com/pavel418890/service/foundation/database"
 	"github.com/pkg/errors"
 )
 
@@ -56,7 +57,15 @@ func run(log *log.Logger) error {
 			PrivateKeyFile string `conf:"default:/service/private.pem"`
 			Algorithm      string `conf:"default:RS256"`
 		}
+		DB struct {
+			User       string `conf:"default:postgres"`
+			Password   string `conf:"default:postgres,noprint"`
+			Host       string `conf:"default:db"`
+			Name       string `conf:"default:postgres"`
+			DisableTLS bool   `conf:"default:true"`
+		}
 	}
+
 	cfg.Version.Desc = "copyright information here"
 	cfg.Version.SVN = build
 	if err := conf.Parse(os.Args[1:], "SALES", &cfg); err != nil {
@@ -117,6 +126,25 @@ func run(log *log.Logger) error {
 		return errors.Wrap(err, "constructing auth")
 	}
 
+	// ========================================================================
+	// Start database
+	log.Println("main: Initializing database support")
+	cfgDB := database.Config{
+		User:       cfg.DB.User,
+		Password:   cfg.DB.Password,
+		Host:       cfg.DB.Host,
+		Name:       cfg.DB.Name,
+		DisableTLS: cfg.DB.DisableTLS,
+	}
+	db, err := database.Open(cfgDB)
+	if err != nil {
+		return errors.Wrap(err, "connecting to db")
+	}
+	defer func() {
+		log.Printf("main: Database Stopping : %s", cfg.DB.Host)
+		db.Close()
+	}()
+
 	// Start Debug Service
 	//
 	// debug/pprof - Added to the default mux by importing the net/http/pprof package.
@@ -145,7 +173,7 @@ func run(log *log.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      handlers.API(build, shutdown, log, auth),
+		Handler:      handlers.API(build, shutdown, log, auth, db),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}
