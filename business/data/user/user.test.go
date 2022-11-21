@@ -8,6 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pavel418890/service/business/auth"
+	"github.com/pavel418890/service/business/data/schema"
 	"github.com/pavel418890/service/business/data/user"
 	"github.com/pavel418890/service/business/tests"
 	"github.com/pkg/errors"
@@ -109,7 +110,7 @@ func TestUser(t *testing.T) {
 		}
 		t.Logf("\t%s\tTest %d:\tShould be able to delete user.", tests.Success, testID)
 
-		_, err = u.One(ctx, claims, db, u.ID)
+		_, err = u.QueryByID(ctx, claims, db, u.ID)
 		if errors.Cause(err) != user.ErrNotFound {
 			t.Fatalf("\t%s\tTest %d:\tShould NOT be able to retrieve user : %s.", tests.Failed, testID, err)
 		}

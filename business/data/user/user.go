@@ -70,11 +70,10 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 			usr.Roles, usr.DateCreated, usr.DateUpdated,
 		),
 	)
-	_, err := u.db.ExecContext(
+	if _, err := u.db.ExecContext(
 		ctx, q, usr.ID, usr.Name, usr.Email,
 		usr.PasswordHash, usr.DateCreated, usr.DateUpdated,
-	)
-	if err != nil {
+	); err != nil {
 		return Info{}, errors.Wrap(err, "inserting user")
 	}
 	return usr, nil
