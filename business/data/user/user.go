@@ -60,8 +60,8 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 		DateUpdated:  now.UTC(),
 	}
 
-	const q = `INSERT INFO users
-    (user_id, name, email ,password_hash, roles, date_created, date_updated)
+	const q = `INSERT INTO users
+    (user_id, name, email, password_hash, roles, date_created, date_updated)
     VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	u.log.Printf("%s : %s : query : %s", traceID, "user.Create",
@@ -71,8 +71,8 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 		),
 	)
 	if _, err := u.db.ExecContext(
-		ctx, q, usr.ID, usr.Name, usr.Email,
-		usr.PasswordHash, usr.DateCreated, usr.DateUpdated,
+		ctx, q, usr.ID, usr.Name, usr.Email, usr.PasswordHash,
+		usr.Roles, usr.DateCreated, usr.DateUpdated,
 	); err != nil {
 		return Info{}, errors.Wrap(err, "inserting user")
 	}
@@ -105,13 +105,10 @@ func (u User) Update(ctx context.Context, traceID string, claims auth.Claims, us
 		usr.PasswordHash = pw
 	}
 	usr.DateUpdated = now
-	const q = `UPDATE users SET
-    "name" = $2,
-    "email" = $3,
-    "roles" = $4,
-    "password_hash" = $5,
-    "date_updated" = $6,
-    WHERE user_id = $1;`
+	const q = `
+    UPDATE users SET "name" = $2, "email" = $3, "roles" = $4, "password_hash" = $5, "date_updated" = $6
+    WHERE user_id = $1;
+    `
 
 	u.log.Printf("%s : %s : query %s", traceID, "user.Update",
 		database.Log(
@@ -219,9 +216,9 @@ func (u User) QueryByEmail(ctx context.Context, traceID string, claims auth.Clai
         email,
         roles,
         password_hash,
-        date_createdi,
+        date_created,
         date_updated
-    FROM users WHERE user_id = $1;`
+    FROM users WHERE email = $1;`
 
 	u.log.Printf("%s : %s : query : %s", traceID, "user.QueryByID",
 		database.Log(q, email),

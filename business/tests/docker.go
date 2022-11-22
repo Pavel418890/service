@@ -43,13 +43,13 @@ func startContainer(t *testing.T, image string, port string, args ...string) *Co
 	ip, randPort := extractIPPort(t, doc, port)
 
 	c := Container{
-		IP:   ip,
+		ID:   id,
 		Host: net.JoinHostPort(ip, randPort),
 	}
 
-	t.Log("Image:           %s", image)
-	t.Log("ContainerID:     %s", c.ID)
-	t.Log("Host:            %s", c.Host)
+	t.Logf("Image:           %s", image)
+	t.Logf("ContainerID:     %s", c.ID)
+	t.Logf("Host:            %s", c.Host)
 
 	return &c
 }
@@ -74,7 +74,7 @@ func dumpContainerLogs(t *testing.T, id string) {
 		t.Fatalf("could not log container: %v", err)
 	}
 
-	t.Log("Logs for %s\n%s:", id, out)
+	t.Logf("Logs for %s\n%s:", id, out)
 }
 
 func extractIPPort(t *testing.T, doc []map[string]interface{}, port string) (string, string) {
@@ -95,13 +95,15 @@ func extractIPPort(t *testing.T, doc []map[string]interface{}, port string) (str
 	if !exists {
 		t.Fatal("could not get network ports/tcp list settings")
 	}
-	if len(list) != 1 {
-		t.Fatal("could not get network ports/tcp list settings")
-	}
+
+	//	if len(list) != 1 {
+	//		t.Fatal()
+	//		t.Fatal("could not get network ports/tcp list settings")
+	//	}
 	data, exists := list[0].(map[string]interface{})
 	if !exists {
 		t.Fatal("could not get network ports/tcp list data")
 	}
-
+	t.Logf("\t\t\t data, port %s %s", data["HostIp"], data["HostPort"])
 	return data["HostIp"].(string), data["HostPort"].(string)
 }

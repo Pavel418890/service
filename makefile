@@ -20,13 +20,11 @@ kind-up:
 
 kind-down:
 	kind delete cluster --name plots-starter-cluster
-
 kind-load:
 	kind load docker-image sales-api-amd64:1.0 --name plots-starter-cluster
 
 kind-services:
-	./kustomize build zarf/k8s/dev | kubectl apply -f -
-
+	kubectl kustomize ./zarf/k8s/dev | kubectl apply -f - 
 
 kind-status:
 	kubectl get nodes
