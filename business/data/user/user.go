@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pavel418890/service/business/auth"
@@ -145,7 +146,7 @@ func (u User) Delete(ctx context.Context, traceID string, userID string) error {
 }
 
 // Query retrieves a list of existing users from the database.
-func (u User) Query(ctx context.Context, traceID string) ([]Info, error) {
+func (u User) Query(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]Info, error) {
 	const q = `
     SELECT
         user_id,
@@ -155,13 +156,16 @@ func (u User) Query(ctx context.Context, traceID string) ([]Info, error) {
         password_hash,
         date_created,
         date_updated
-    FROM users;`
+    FROM users
+    ORDER BY user_id
+    OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY;`
+	offset := (pageNumber - 1) * rowsPerPage
 
-	log.Printf("%s : %s : query : %s", traceID, "user.Query",
-		database.Log(q),
+	u.log.Printf("%s : %s : query : %s", traceID, "user.Query",
+		database.Log(q, offset, rowsPerPage),
 	)
 	users := []Info{}
-	if err := u.db.SelectContext(ctx, &users, q); err != nil {
+	if err := u.db.SelectContext(ctx, &users, q, offset, rowsPerPage); err != nil {
 		return nil, errors.Wrap(err, "selecting users")
 	}
 
@@ -218,8 +222,8 @@ func (u User) QueryByEmail(ctx context.Context, traceID string, claims auth.Clai
         password_hash,
         date_created,
         date_updated
-    FROM users WHERE email = $1;`
-
+    FROM users
+    WHERE email = $1;`
 	u.log.Printf("%s : %s : query : %s", traceID, "user.QueryByID",
 		database.Log(q, email),
 	)
@@ -237,4 +241,44 @@ func (u User) QueryByEmail(ctx context.Context, traceID string, claims auth.Clai
 	}
 
 	return usr, nil
+}
+
+func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, email, password string) (auth.Claims, error) {
+
+	const q = `
+    SELECT user_id, name, email, roles, password_hash, date_created, date_updated
+    FROM users
+    WHERE email = $1;`
+	var usr Info
+	if err := u.db.GetContext(ctx, &usr, q, email); err != nil {
+
+		// Normally we would return ErrNotFound in this scenario, but we do not
+		// want to leak to an unauthenticated user which emails are in the system.
+		if err == sql.ErrNoRows {
+			return auth.Claims{}, ErrAuthenticationFailure
+		}
+
+		return auth.Claims{}, errors.Wrap(err, "selecting single user")
+	}
+
+	// Compare the provided password with the save hash. Use the bcrypt
+	// comparison function so it is crypotgraphically secure.
+
+	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(password)); err != nil {
+		return auth.Claims{}, ErrAuthenticationFailure
+	}
+
+	// If we are this far the request is valid. Create some claims for the user
+	// and generate their token.
+	claims := auth.Claims{
+		StandardClaims: jwt.StandardClaims{
+			Issuer:    "service project",
+			Subject:   usr.ID,
+			Audience:  "students",
+			ExpiresAt: now.Add(time.Hour).Unix(),
+			IssuedAt:  now.Unix(),
+		},
+		Roles: usr.Roles,
+	}
+	return claims, nil
 }

@@ -24,7 +24,7 @@ kind-load:
 	kind load docker-image sales-api-amd64:1.0 --name plots-starter-cluster
 
 kind-services:
-	kubectl kustomize ./zarf/k8s/dev | kubectl apply -f - 
+	kubectl kustomize ./zarf/k8s/dev | kubectl apply -f -
 
 kind-status:
 	kubectl get nodes
@@ -50,14 +50,21 @@ tidy:
 	go mod vendor
 
 test:
-	go test -v ./... -count=1
+	go test  ./... -count=1
 	staticcheck ./...
 
 runa:
 	go run app/admin/main.go
 
 dashboard:
-	expvarmon -ports=":4000" -vars="build,requests,goroutines,errors,mem:memstats.Alloc"
+	expvarmon \
+		-ports="0.0.0.0:4000" \
+		-vars="build,requests,goroutines,errors,mem:memstats.Alloc"
 
 load:
-	hey -m GET -c 100 -n 10000000 "http://localhost:3000/readiness"
+	hey \
+		-m GET \
+		-c 100 \
+		-n 1000000 \
+		-H 'Authorization: Bearer ${TOKEN}' \
+		"http://localhost:3000/users/1/2"
