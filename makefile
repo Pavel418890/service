@@ -1,4 +1,7 @@
 SHELL := /bin/bash
+TOKEN = `curl --user "admin@example.com:gophers" \
+			http://localhost:3000/users/token/920ee610-06ee-4f4e-a105-8fb95be31155 | \
+		sed -E 's/.*"Token":"?([^,"]*)"?.*/\1/'`
 
 #==============================================================================
 # Building containers
@@ -20,6 +23,7 @@ kind-up:
 
 kind-down:
 	kind delete cluster --name plots-starter-cluster
+
 kind-load:
 	kind load docker-image sales-api-amd64:1.0 --name plots-starter-cluster
 
@@ -34,9 +38,7 @@ kind-status-full:
 	kubectl describe pod -lapp=sales-api
 
 kind-logs:
-	kubectl logs -lapp=sales-api --all-containers=true -f
-
-
+	kubectl logs -f --pod-running-timeout=1h -lapp=sales-api --all-containers=true -f
 
 kind-sales-api: sales-api
 	kind load docker-image sales-api-amd64:1.0 --name plots-starter-cluster
@@ -64,7 +66,7 @@ dashboard:
 load:
 	hey \
 		-m GET \
-		-c 100 \
-		-n 1000000 \
-		-H 'Authorization: Bearer ${TOKEN}' \
+		-c 1000 \
+		-n 10000000 \
+		-H "Authorization: Bearer ${TOKEN}" \
 		"http://localhost:3000/users/1/2"
