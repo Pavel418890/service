@@ -19,12 +19,9 @@ import (
 	"github.com/pavel418890/service/business/auth"
 	"github.com/pavel418890/service/foundation/database"
 	"github.com/pkg/errors"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/zipkin"
-	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.opentelemetry.io/otel/internal/global"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 /*
@@ -142,8 +139,7 @@ func run(log *log.Logger) error {
 	// compatible with your project. Please review the documentation for
 	// opentelemetry.
 	log.Println("main: Initializing OT/Zipkin tracing support")
-
-	exporter, err := zipkin.NewRawExporter(
+	exporter, err := zipkin.New(
 		cfg.Zipkin.ReporterURI,
 		cfg.Zipkin.ServiceName,
 		zipkin.WithLogger(log),
@@ -151,16 +147,15 @@ func run(log *log.Logger) error {
 	if err != nil {
 		return errors.Wrap(err, "creating new exporter")
 	}
-
-	tp := trace.NewTraceProvider(
-		trace.WithConfig(trace.Config{DefaultSampler: trace.TraceIDRatioBased(cfg.Zipkin.Probability)}),
-		trace.WithBatcher(exporter, trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
-			trace.WithbatchTiimeout(trace.DefaultBatchTimout),
-			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.TracerProviderOption(
+			sdktrace.TraceIDRatioBased(cfg.Zipkin.Probability),
+			sdktrace.WithBatcher(exporter, sdktrace.WithMaxExportBatchSize(sdktrace.DefaultMaxExportBatchSize)),
+			sdktrace.WithBatchTimeout(sdktrace.DefaultExportTimeout),
+			sdktrace.WithMaxExportBatchSize(sdktrace.DefaultMaxExportBatchSize),
 		),
 	)
-
-	global.SetTraceProvider(tp)
+	global.SetTracerProvider(tp)
 	// ========================================================================
 	// Start database
 	log.Println("main: Initializing database support")

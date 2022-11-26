@@ -85,11 +85,11 @@ func (a *App) Handle(method string, path string, handler Handler, mw ...Middlewa
 
 		// Start the context with the required values to process the request.
 		ctx := r.Context()
-		ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, r.URL.Path)
+		ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("web").Start(ctx, r.URL.Path)
 		defer span.End()
 		// Set the context  with the required values to process the request.
 		v := Values{
-			TraceID: span.SpanContext().TraceID.String(),
+			TraceID: span.SpanContext().TraceID().String(),
 			Now:     time.Now(),
 		}
 
