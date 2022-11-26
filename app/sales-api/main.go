@@ -19,6 +19,12 @@ import (
 	"github.com/pavel418890/service/business/auth"
 	"github.com/pavel418890/service/foundation/database"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 /*
@@ -64,8 +70,12 @@ func run(log *log.Logger) error {
 			Name       string `conf:"default:postgres"`
 			DisableTLS bool   `conf:"default:true"`
 		}
+		Zipkin struct {
+			ReporterURI string  `conf:"default:zipkin:9411/api/v2/spans"`
+			ServiceName string  `conf:"default:sales-api"`
+			Probability float64 `conf:"default:0.05"`
+		}
 	}
-
 	cfg.Version.Desc = "copyright information here"
 	cfg.Version.SVN = build
 	if err := conf.Parse(os.Args[1:], "SALES", &cfg); err != nil {
@@ -125,7 +135,32 @@ func run(log *log.Logger) error {
 	if err != nil {
 		return errors.Wrap(err, "constructing auth")
 	}
+	// ========================================================================
+	// Start Tracing Support
 
+	// WARNINGS: The current Init settings are using defaults which may not be
+	// compatible with your project. Please review the documentation for
+	// opentelemetry.
+	log.Println("main: Initializing OT/Zipkin tracing support")
+
+	exporter, err := zipkin.NewRawExporter(
+		cfg.Zipkin.ReporterURI,
+		cfg.Zipkin.ServiceName,
+		zipkin.WithLogger(log),
+	)
+	if err != nil {
+		return errors.Wrap(err, "creating new exporter")
+	}
+
+	tp := trace.NewTraceProvider(
+		trace.WithConfig(trace.Config{DefaultSampler: trace.TraceIDRatioBased(cfg.Zipkin.Probability)}),
+		trace.WithBatcher(exporter, trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+			trace.WithbatchTiimeout(trace.DefaultBatchTimout),
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+		),
+	)
+
+	global.SetTraceProvider(tp)
 	// ========================================================================
 	// Start database
 	log.Println("main: Initializing database support")

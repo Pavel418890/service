@@ -61,9 +61,7 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 		DateUpdated:  now.UTC(),
 	}
 
-	const q = `INSERT INTO users
-    (user_id, name, email, password_hash, roles, date_created, date_updated)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	const q = `INSERT INTO users (user_id, name, email, password_hash, roles, date_created, date_updated) VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	u.log.Printf("%s : %s : query : %s", traceID, "user.Create",
 		database.Log(
@@ -106,10 +104,7 @@ func (u User) Update(ctx context.Context, traceID string, claims auth.Claims, us
 		usr.PasswordHash = pw
 	}
 	usr.DateUpdated = now
-	const q = `
-    UPDATE users SET "name" = $2, "email" = $3, "roles" = $4, "password_hash" = $5, "date_updated" = $6
-    WHERE user_id = $1;
-    `
+	const q = `UPDATE users SET "name" = $2, "email" = $3, "roles" = $4, "password_hash" = $5, "date_updated" = $6 WHERE user_id = $1;`
 
 	u.log.Printf("%s : %s : query %s", traceID, "user.Update",
 		database.Log(
@@ -147,18 +142,7 @@ func (u User) Delete(ctx context.Context, traceID string, userID string) error {
 
 // Query retrieves a list of existing users from the database.
 func (u User) Query(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]Info, error) {
-	const q = `
-    SELECT
-        user_id,
-        name,
-        email,
-        roles,
-        password_hash,
-        date_created,
-        date_updated
-    FROM users
-    ORDER BY user_id
-    OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY;`
+	const q = `SELECT user_id, name, email, roles, password_hash, date_created, date_updated FROM users ORDER BY user_id OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY;`
 	offset := (pageNumber - 1) * rowsPerPage
 
 	u.log.Printf("%s : %s : query : %s", traceID, "user.Query",
@@ -184,16 +168,7 @@ func (u User) QueryByID(ctx context.Context, traceID string, claims auth.Claims,
 		return Info{}, ErrForbidden
 	}
 
-	const q = `
-    SELECT
-        user_id,
-        name,
-        email,
-        roles,
-        password_hash,
-        date_created,
-        date_updated
-    FROM users WHERE user_id = $1;`
+	const q = `SELECT user_id, name, email, roles, password_hash, date_created, date_updated FROM users WHERE user_id = $1;`
 
 	u.log.Printf("%s : %s : query : %s", traceID, "user.QueryByID",
 		database.Log(q, userID),
@@ -213,17 +188,7 @@ func (u User) QueryByID(ctx context.Context, traceID string, claims auth.Claims,
 // QueryByEmail gets the specified user from database.
 func (u User) QueryByEmail(ctx context.Context, traceID string, claims auth.Claims, email string) (Info, error) {
 
-	const q = `
-    SELECT
-        user_id,
-        name,
-        email,
-        roles,
-        password_hash,
-        date_created,
-        date_updated
-    FROM users
-    WHERE email = $1;`
+	const q = `SELECT user_id, name, email, roles, password_hash, date_created, date_updated FROM users WHERE email = $1;`
 	u.log.Printf("%s : %s : query : %s", traceID, "user.QueryByID",
 		database.Log(q, email),
 	)
@@ -245,10 +210,7 @@ func (u User) QueryByEmail(ctx context.Context, traceID string, claims auth.Clai
 
 func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, email, password string) (auth.Claims, error) {
 
-	const q = `
-    SELECT user_id, name, email, roles, password_hash, date_created, date_updated
-    FROM users
-    WHERE email = $1;`
+	const q = `SELECT user_id, name, email, roles, password_hash, date_created, date_updated FROM users WHERE email = $1;`
 	var usr Info
 	if err := u.db.GetContext(ctx, &usr, q, email); err != nil {
 
